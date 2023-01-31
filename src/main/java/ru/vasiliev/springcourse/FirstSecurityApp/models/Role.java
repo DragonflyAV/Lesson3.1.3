@@ -1,7 +1,9 @@
 package ru.vasiliev.springcourse.FirstSecurityApp.models;
 
 import org.springframework.security.core.GrantedAuthority;
+
 import javax.persistence.*;
+import java.util.Set;
 
 @Entity
 @Table(name = "Roles")
@@ -10,15 +12,13 @@ public class Role implements GrantedAuthority {
     @Column(name = "id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-
     @Column (name = "name")
     private String name;
 
-    public Role() {
-    }
+    @ManyToMany(mappedBy = "roles")
+    private Set<User> users;
 
-    public Role(String name) {
-        this.name = name;
+    public Role() {
     }
 
     public int getId() {
@@ -35,6 +35,14 @@ public class Role implements GrantedAuthority {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public Set<User> getUsers() {
+        return users;
+    }
+
+    public void setUsers(Set<User> users) {
+        this.users = users;
     }
 
     @Override

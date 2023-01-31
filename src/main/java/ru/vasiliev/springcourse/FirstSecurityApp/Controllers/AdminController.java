@@ -1,9 +1,6 @@
 package ru.vasiliev.springcourse.FirstSecurityApp.Controllers;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.validation.BindingResult;
@@ -12,9 +9,6 @@ import org.springframework.web.servlet.ModelAndView;
 import ru.vasiliev.springcourse.FirstSecurityApp.models.Role;
 import ru.vasiliev.springcourse.FirstSecurityApp.models.User;
 import ru.vasiliev.springcourse.FirstSecurityApp.repositories.RoleRepository;
-import ru.vasiliev.springcourse.FirstSecurityApp.security.ForUserDetails;
-import ru.vasiliev.springcourse.FirstSecurityApp.services.AdminService;
-import ru.vasiliev.springcourse.FirstSecurityApp.services.RegistrationService;
 import ru.vasiliev.springcourse.FirstSecurityApp.services.UserService;
 import ru.vasiliev.springcourse.FirstSecurityApp.util.UserValidator;
 
@@ -25,62 +19,57 @@ import java.util.List;
 @RequestMapping("/admin")
 public class AdminController {
 
-    private final AdminService adminService;
     private final UserValidator userValidator;
     private final RoleRepository roleRepository;
-    private final RegistrationService registrationService;
+    private final UserService userService;
 
-    @Autowired
-    public AdminController(AdminService adminService, UserValidator userValidator, RoleRepository roleRepository, RegistrationService registrationService) {
-        this.adminService = adminService;
+    public AdminController(UserValidator userValidator, RoleRepository roleRepository, UserService userService) {
         this.userValidator = userValidator;
         this.roleRepository = roleRepository;
-        this.registrationService = registrationService;
+        this.userService = userService;
     }
 
     @GetMapping()
-    public String startPageAdmin(ModelMap model) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        ForUserDetails userDetails = (ForUserDetails) authentication.getPrincipal();
-        model.addAttribute("user", userDetails.getUser());
+    public String startPageAdmin(@AuthenticationPrincipal User user, ModelMap model) {
+        model.addAttribute("user", user);
         return "pages/admin";
     }
 
     @GetMapping("/index")
     public String index(ModelMap model) {
-        model.addAttribute("users", adminService.findAll());
+        model.addAttribute("users", userService.findAll());
         return "pages/index";
     }
 
     @GetMapping("/{id}")
     public String show(@PathVariable("id") int id, ModelMap model) {
-        model.addAttribute("user", adminService.findOne(id));
+        model.addAttribute("user", userService.findOne(id));
         return "pages/show";
     }
 
-    @GetMapping("/registration")
+    @GetMapping("/new")
     public ModelAndView newUser() {
         User user = new User();
-        ModelAndView mav = new ModelAndView("auth/registration");
+        ModelAndView mav = new ModelAndView("/auth/new");
         mav.addObject("user", user);
         List<Role> roles = roleRepository.findAll();
         mav.addObject("allRoles", roles);
         return mav;
     }
 
-    @PostMapping("/registration")
+    @PostMapping("/new")
     public String performRegistration(@ModelAttribute("user") @Valid User user, BindingResult bindingResult) {
         userValidator.validate(user, bindingResult);
         if (bindingResult.hasErrors()) {
-            return "/auth/registration";
+            return "/auth/new";
         }
-        registrationService.register(user);
+        userService.saveUser(user);
         return "redirect:/admin/";
     }
 
     @GetMapping("/{id}/edit")
     public ModelAndView editUser(@PathVariable(name = "id") int id) {
-        User user = adminService.findOne(id);
+        User user = userService.findOne(id);
         ModelAndView mav = new ModelAndView("pages/edit");
         mav.addObject("user", user);
         List<Role> roles = roleRepository.findAll();
@@ -93,13 +82,13 @@ public class AdminController {
         if (bindingResult.hasErrors()) {
             return "pages/edit";
         }
-        adminService.update(id, user);
+        userService.update(id, user);
         return "redirect:/admin/";
     }
 
     @DeleteMapping("/{id}")
     public String delete(@PathVariable("id") int id) {
-        adminService.delete(id);
-        return "redirect:/admin/";
+        userService.delete(id);
+        return "redirect:/admin/index";
     }
 }

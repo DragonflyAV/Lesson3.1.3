@@ -6,7 +6,7 @@
 </head>
 <body>
 
-<form th:method="POST" th:action="@{/admin/registration}" th:object="${user}">
+<form th:method="POST" th:action="@{/admin/new}" th:object="${user}">
   <label for="username">Введите имя пользователя: </label>
   <input type="text" th:field="*{username}" id="username"/>
   <div style="color:red" th:if="${#fields.hasErrors('username')}" th:errors="*{username}">Username Error</div>
@@ -25,7 +25,7 @@
   <br/>
   <input type="submit" value="Create"/>
 
-  <form th:action="@{/admin/registration}" th:object="${user}" method="post">
+  <form th:action="@{/admin/new}" th:object="${user}" method="post">
     <p>
       <label>Roles:
         <input type="checkbox" name="roles"
